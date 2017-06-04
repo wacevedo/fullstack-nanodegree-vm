@@ -6,4 +6,25 @@
 -- You can write comments in this file by starting them with two dashes, like
 -- these lines here.
 
+--Delete database for avoid error in case that it exists
+DROP DATABASE IF EXISTS tournament;
 
+CREATE DATABASE tournament;
+
+\c tournament;
+
+CREATE TABLE IF NOT EXISTS players (id SERIAL PRIMARY KEY,
+                                    name TEXT);
+
+CREATE TABLE IF NOT EXISTS matches (id SERIAL PRIMARY KEY,
+                                    winner INTEGER REFERENCES players (id),
+                                    loser INTEGER REFERENCES players (id));
+
+CREATE VIEW players_standing AS SELECT players.id,
+                                                players.name,
+                                                COUNT(matches.winner) AS wins,
+                                                ((SELECT COUNT(*) FROM matches WHERE winner = players.id) + (SELECT COUNT(*) FROM matches WHERE loser = players.id)) AS matches
+                                                FROM players left join matches
+                                                ON players.id = matches.winner
+                                                GROUP BY players.id
+                                                ORDER BY wins DESC;
